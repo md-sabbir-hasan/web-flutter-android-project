@@ -1,0 +1,54 @@
+package com.nexaerp.user;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long>{
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+    Optional<User> findByInviteToken(String inviteToken);
+
+
+    Page<User> findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            String name,
+            String email,
+            Pageable pageable
+    );
+
+    Page<User> findByStatus(
+            UserStatus status,
+            Pageable pageable
+    );
+
+    Page<User> findByStatusAndNameContainingIgnoreCaseOrStatusAndEmailContainingIgnoreCase(
+            UserStatus status1,
+            String name,
+            UserStatus status2,
+            String email,
+            Pageable pageable
+    );
+
+    long countByRoles_Id(Long roleId);
+
+    long countByStatus(UserStatus status);
+
+    @Query("select distinct u from User u join u.roles r join r.permissions p where u.status = :status and p.code = :permission")
+    List<User> findDistinctByStatusAndPermissionCode(
+            @Param("status") UserStatus status,
+            @Param("permission") String permission
+    );
+
+    @Query("select distinct u from User u join u.roles r join r.permissions p where u.status = :status and p.code in :permissions")
+    List<User> findDistinctByStatusAndPermissionCodeIn(
+            @Param("status") UserStatus status,
+            @Param("permissions") List<String> permissions
+    );
+}
